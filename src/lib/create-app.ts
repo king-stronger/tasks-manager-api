@@ -4,6 +4,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { requestId } from "hono/request-id";
 import pino from "pino";
 import { notFound, onError, serveEmojiFavicon } from "stoker/middlewares";
+import { defaultHook } from "stoker/openapi";
 import env from "@/env.js";
 
 const rootLogger = pino({
@@ -16,6 +17,7 @@ const rootLogger = pino({
 export function createRouter() {
 	return new OpenAPIHono<AppBindings>({
 		strict: false,
+		defaultHook,
 	});
 }
 
