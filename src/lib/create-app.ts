@@ -1,0 +1,33 @@
+import type { AppBindings } from "./types.js";
+import { structuredLogger } from "@hono/structured-logger";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { requestId } from "hono/request-id";
+import pino from "pino";
+import { notFound, onError, serveEmojiFavicon } from "stoker/middlewares";
+import env from "@/env.js";
+
+const rootLogger = pino({
+	level: env.LOG_LEVEL || "info",
+	transport: {
+		target: "pino-pretty",
+	},
+});
+
+export default function createApp() {
+	const app = new OpenAPIHono<AppBindings>({
+		strict: false,
+	});
+
+	app.use(serveEmojiFavicon(""));
+	app.use(requestId());
+	app.use(
+		structuredLogger({
+			createLogger: c => rootLogger.child({ requestId: c.var.requestId }),
+		}),
+	);
+
+	app.notFound(notFound);
+	app.onError(onError);
+
+	return app;
+}
