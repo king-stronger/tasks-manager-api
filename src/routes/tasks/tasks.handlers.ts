@@ -1,5 +1,6 @@
-import type { CreateRoute, GetOneRoute, ListRoute } from "./tasks.routes.js";
+import type { CreateRoute, GetOneRoute, ListRoute, UpdateRoute } from "./tasks.routes.js";
 import type { AppRouteHandler } from "@/lib/types.js";
+import { eq } from "drizzle-orm";
 import * as HttpStatusCodes from "stoker/http-status-codes";
 import * as HttpStatusPhrases from "stoker/http-status-phrases";
 import db from "@/db/index.js";
@@ -24,6 +25,23 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
 			return operators.eq(fields.id, id);
 		},
 	});
+
+	if (!task) {
+		return c.json({
+			message: HttpStatusPhrases.NOT_FOUND,
+		}, HttpStatusCodes.NOT_FOUND);
+	}
+	return c.json(task, HttpStatusCodes.OK);
+};
+
+export const update: AppRouteHandler<UpdateRoute> = async (c) => {
+	const { id } = c.req.valid("param");
+	const data = c.req.valid("json");
+
+	const [task] = await db.update(tasks)
+		.set(data)
+		.where(eq(tasks.id, id))
+		.returning();
 
 	if (!task) {
 		return c.json({

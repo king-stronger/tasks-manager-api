@@ -1,8 +1,8 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import * as HttpStatusCodes from "stoker/http-status-codes";
-import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
+import { jsonContent, jsonContentOneOf, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema, IdParamsSchema } from "stoker/openapi/schemas";
-import { insertTasksSchema, selectTasksSchema } from "@/db/schema.js";
+import { insertTasksSchema, selectTasksSchema, updateTasksSchema } from "@/db/schema.js";
 import { notFoundSchema } from "@/lib/constants.js";
 
 const tags = ["Tasks"];
@@ -64,6 +64,37 @@ export const getOne = createRoute({
 	},
 });
 
+export const update = createRoute({
+	tags,
+	method: "put",
+	path: "/tasks/{id}",
+	request: {
+		params: IdParamsSchema,
+		body: jsonContentRequired(
+			updateTasksSchema,
+			"The task to update",
+		),
+	},
+	responses: {
+		[HttpStatusCodes.OK]: jsonContent(
+			selectTasksSchema,
+			"The updated task",
+		),
+		[HttpStatusCodes.NOT_FOUND]: jsonContent(
+			notFoundSchema,
+			"Task not found",
+		),
+		[HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContentOneOf(
+			[
+				createErrorSchema(updateTasksSchema),
+				createErrorSchema(IdParamsSchema),
+			],
+			"Invalid Id or Validation(s) error(s)",
+		),
+	},
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
+export type UpdateRoute = typeof update;
