@@ -6,8 +6,11 @@
 		"dev": "tsx watch src/index.ts",
 		"build": "tsc",
 		"start": "node dist/index.js",
-		"lint": "eslint .",
-		"lint:fix": "lint . --fix"
+		"format": "biome format --write .",
+		"lint": "biome lint .",
+		"lint:fix": "biome lint --write .",
+		"check": "biome check .",
+		"check:fix": "biome check --write ."
 	},
 	"dependencies": {
 		"@asteasolutions/zod-to-openapi": "^8.5.0",
@@ -26,8 +29,8 @@
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
-		"@antfu/eslint-config": "^9.1.0",
-		"@types/node": "^20.11.17",
+		"@biomejs/biome": "2.5.6",
+		"@types/node": "^26.1.2",
 		"drizzle-kit": "^0.31.10",
 		"eslint": "^10.5.0",
 		"eslint-plugin-format": "^2.0.1",

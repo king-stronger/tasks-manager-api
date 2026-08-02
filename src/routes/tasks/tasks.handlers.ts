@@ -21,9 +21,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
 	const { id } = c.req.valid("param");
 	const task = await db.query.tasks.findFirst({
-		where(fields, operators) {
-			return operators.eq(fields.id, id);
-		},
+        where: (tasks, { eq }) => eq(tasks.id, id)
 	});
 
 	if (!task) {
