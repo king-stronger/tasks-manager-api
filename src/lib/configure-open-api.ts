@@ -1,7 +1,6 @@
-import type { AppOpenApi } from "./types.js";
-
 import { Scalar } from "@scalar/hono-api-reference";
 import packageJSON from "../../package.json" with { type: "json" };
+import type { AppOpenApi } from "./types.js";
 
 export function configureOpenApi(app: AppOpenApi) {
 	app.doc("/doc", {
@@ -12,13 +11,16 @@ export function configureOpenApi(app: AppOpenApi) {
 		},
 	});
 
-	app.get("/scalar", Scalar({
-		url: "/doc",
-		theme: "kepler",
-		layout: "modern",
-		defaultHttpClient: {
-			targetKey: "js",
-			clientKey: "fetch",
-		},
-	}));
+	app.get(
+		"/scalar",
+		Scalar({
+			url: "/doc",
+			theme: "kepler",
+			layout: "modern",
+			defaultHttpClient: {
+				targetKey: "js",
+				clientKey: "fetch",
+			},
+		}),
+	);
 }

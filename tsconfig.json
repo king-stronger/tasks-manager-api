@@ -7,9 +7,7 @@
 		"paths": {
 			"@/*": ["./src/*"]
 		},
-		"types": [
-			"node"
-		],
+		"types": ["node"],
 		"strict": true,
 		"outDir": "./dist",
 		"verbatimModuleSyntax": true,

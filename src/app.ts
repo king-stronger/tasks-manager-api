@@ -5,10 +5,7 @@ import tasks from "@/routes/tasks/tasks.index.js";
 
 const app = createApp();
 
-const routes = [
-	index,
-	tasks,
-];
+const routes = [index, tasks];
 
 configureOpenApi(app);
 
