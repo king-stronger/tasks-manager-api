@@ -20,14 +20,14 @@ const envSchema = z
 		return true;
 	});
 
-export type env = z.infer<typeof envSchema>;
+export type Environment = z.infer<typeof envSchema>;
 
-const parsed = envSchema.safeParse(process.env);
-
-if (!parsed.success) {
-	throw new Error(`Invalid error ${parsed.error.flatten}`);
+export function parseEnv(data: any){
+	const { data: env, error } = envSchema.safeParse(data);
+	
+	if (error) {
+		throw new Error(`Invalid error: ${error}`);
+	}
+	
+	return env;
 }
-
-const env = parsed.data;
-
-export default env;

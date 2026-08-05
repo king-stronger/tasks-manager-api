@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import * as HttpStatusCodes from "stoker/http-status-codes";
 import * as HttpStatusPhrases from "stoker/http-status-phrases";
-import db from "@/db/index.js";
+import { createDb } from "@/db/index.js";
 import { tasks } from "@/db/schema.js";
 import type { AppRouteHandler } from "@/lib/types.js";
 import type {
@@ -13,11 +13,13 @@ import type {
 } from "./tasks.routes.js";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
+	const { db } = createDb(c.env)
 	const tasks = await db.query.tasks.findMany();
 	return c.json(tasks);
 };
 
 export const create: AppRouteHandler<CreateRoute> = async (c) => {
+	const { db } = createDb(c.env)
 	const task = c.req.valid("json");
 	const [inserted] = await db.insert(tasks).values(task).returning();
 
@@ -25,6 +27,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
+	const { db } = createDb(c.env)
 	const { id } = c.req.valid("param");
 	const task = await db.query.tasks.findFirst({
 		where: (tasks, { eq }) => eq(tasks.id, id),
@@ -42,9 +45,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
 };
 
 export const update: AppRouteHandler<UpdateRoute> = async (c) => {
+	const { db } = createDb(c.env)
 	const { id } = c.req.valid("param");
 	const data = c.req.valid("json");
-
 	const [task] = await db
 		.update(tasks)
 		.set(data)
@@ -63,8 +66,8 @@ export const update: AppRouteHandler<UpdateRoute> = async (c) => {
 };
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
+	const { db } = createDb(c.env)
 	const { id } = c.req.valid("param");
-
 	const result = await db.delete(tasks).where(eq(tasks.id, id));
 
 	if (result.rowsAffected === 0) {
