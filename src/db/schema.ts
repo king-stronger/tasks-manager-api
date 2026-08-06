@@ -1,15 +1,12 @@
-import { sql } from "drizzle-orm";
-import { int, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { boolean, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
-export const tasks = sqliteTable("tasks", {
-	id: int().primaryKey({ autoIncrement: true }),
-	name: text().notNull(),
-	done: integer({ mode: "boolean" }).notNull().default(false),
-	createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
-		.default(sql`(CURRENT_TIMESTAMP)`)
-		.$onUpdate(() => new Date()),
+export const tasks = pgTable("tasks", {
+	id: serial("id").primaryKey(),
+	name: text("name").notNull(),
+	done: boolean("done").notNull().default(false),
+	createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+	updatedAt: timestamp({ withTimezone: true }).defaultNow().$onUpdate(() => new Date()),
 });
 
 export const selectTasksSchema = createSelectSchema(tasks);

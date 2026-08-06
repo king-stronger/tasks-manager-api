@@ -70,7 +70,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
 	const { id } = c.req.valid("param");
 	const result = await db.delete(tasks).where(eq(tasks.id, id));
 
-	if (result.rowsAffected === 0) {
+	if (result.rowCount === 0) {
 		return c.json(
 			{
 				message: HttpStatusPhrases.NOT_FOUND,

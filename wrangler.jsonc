@@ -4,8 +4,14 @@
 	"main": "src/app.ts",
 	"compatibility_date": "2025-08-03",
 	"compatibility_flags": [
-	   "nodejs_compat"
+		"nodejs_compat"
 	],
+	"vars": {
+		"DATABASE_URL": "http://127.0.0.1:8080",
+		"LOG_LEVEL": "info",
+		"NODE_ENV": "production",
+		"DATABASE_AUTH_TOKEN": "sqdqsdqs"
+	},
 	// "vars": {
 	//   "MY_VAR": "my-variable"
 	// },
