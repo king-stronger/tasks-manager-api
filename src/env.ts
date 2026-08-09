@@ -7,22 +7,13 @@ expand(config());
 const envSchema = z
 	.object({
 		NODE_ENV: z.string().default("development"),
-		PORT: z.coerce.number().default(3000),
-		LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]),
+		LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
 		DATABASE_URL: z.url(),
-		DATABASE_AUTH_TOKEN: z.string().optional(),
 	})
-	.refine((input) => {
-		if (input.NODE_ENV === "production") {
-			return !!input.DATABASE_AUTH_TOKEN;
-		}
-
-		return true;
-	});
 
 export type Environment = z.infer<typeof envSchema>;
 
-export function parseEnv(data: any){
+export function parseEnv(data: unknown){
 	const { data: env, error } = envSchema.safeParse(data);
 	
 	if (error) {
