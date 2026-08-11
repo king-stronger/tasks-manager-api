@@ -1,8 +1,4 @@
-import { config } from "dotenv";
-import { expand } from "dotenv-expand";
 import { z } from "zod";
-
-expand(config());
 
 const envSchema = z.object({
 	PORT: z.number().positive().default(3000),
