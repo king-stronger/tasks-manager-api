@@ -3,9 +3,7 @@
 	"name": "task-manager-api",
 	"main": "src/app.ts",
 	"compatibility_date": "2025-08-03",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
+	"compatibility_flags": ["nodejs_compat"]
 	// "vars": {
 	//   "MY_VAR": "my-variable"
 	// },
@@ -28,7 +26,7 @@
 	//     "database_id": ""
 	//   }
 	// ],
-	// "ai": {	
+	// "ai": {
 	//   "binding": "AI"
 	// },
 	// "observability": {

@@ -8,7 +8,7 @@ import { defaultHook } from "stoker/openapi";
 import type { AppBindings } from "./types.js";
 
 const rootLogger = pino({
-	level: env.LOG_LEVEL || "info"
+	level: env.LOG_LEVEL || "info",
 });
 
 export function createRouter() {

@@ -6,7 +6,9 @@ export const tasks = pgTable("tasks", {
 	name: text("name").notNull(),
 	done: boolean("done").notNull().default(false),
 	createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
-	updatedAt: timestamp({ withTimezone: true }).defaultNow().$onUpdate(() => new Date()),
+	updatedAt: timestamp({ withTimezone: true })
+		.defaultNow()
+		.$onUpdate(() => new Date()),
 });
 
 export const selectTasksSchema = createSelectSchema(tasks);

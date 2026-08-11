@@ -13,13 +13,13 @@ import type {
 } from "./tasks.routes.js";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-	const { db } = createDb(c.env)
+	const { db } = createDb(c.env);
 	const tasks = await db.query.tasks.findMany();
 	return c.json(tasks);
 };
 
 export const create: AppRouteHandler<CreateRoute> = async (c) => {
-	const { db } = createDb(c.env)
+	const { db } = createDb(c.env);
 	const task = c.req.valid("json");
 	const [inserted] = await db.insert(tasks).values(task).returning();
 
@@ -27,7 +27,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
-	const { db } = createDb(c.env)
+	const { db } = createDb(c.env);
 	const { id } = c.req.valid("param");
 	const task = await db.query.tasks.findFirst({
 		where: (tasks, { eq }) => eq(tasks.id, id),
@@ -45,7 +45,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
 };
 
 export const update: AppRouteHandler<UpdateRoute> = async (c) => {
-	const { db } = createDb(c.env)
+	const { db } = createDb(c.env);
 	const { id } = c.req.valid("param");
 	const data = c.req.valid("json");
 	const [task] = await db
@@ -66,7 +66,7 @@ export const update: AppRouteHandler<UpdateRoute> = async (c) => {
 };
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
-	const { db } = createDb(c.env)
+	const { db } = createDb(c.env);
 	const { id } = c.req.valid("param");
 	const result = await db.delete(tasks).where(eq(tasks.id, id));
 
