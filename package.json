@@ -1,11 +1,10 @@
 {
-	"name": "hono-api",
+	"name": "tasks-manager-api",
 	"type": "module",
 	"version": "1.0.0",
 	"scripts": {
 		"dev": "wrangler dev",
 		"deploy": "wrangler deploy --minify",
-		"dev:db": "turso dev --db-file dev.db",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"format": "biome format --write .",
 		"lint": "biome lint .",

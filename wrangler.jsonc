@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "task-manager-api",
+	"name": "tasks-manager-api",
 	"main": "src/app.ts",
 	"compatibility_date": "2025-08-03",
 	"compatibility_flags": ["nodejs_compat"]
