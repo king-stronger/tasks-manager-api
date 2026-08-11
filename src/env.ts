@@ -6,6 +6,7 @@ expand(config());
 
 const envSchema = z
 	.object({
+		PORT: z.number().positive().default(3000),
 		NODE_ENV: z.string().default("development"),
 		LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
 		DATABASE_URL: z.url(),
@@ -22,3 +23,5 @@ export function parseEnv(data: unknown){
 	
 	return env;
 }
+
+export default parseEnv(process.env)
