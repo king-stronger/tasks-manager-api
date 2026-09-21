@@ -5,6 +5,7 @@ import { requestId } from "hono/request-id";
 import pino from "pino";
 import { notFound, onError, serveEmojiFavicon } from "stoker/middlewares";
 import { defaultHook } from "stoker/openapi";
+import { createAuth } from "./auth.js";
 import type { AppBindings } from "./types.js";
 
 const rootLogger = pino({
@@ -28,6 +29,11 @@ export default function createApp() {
 			createLogger: (c) => rootLogger.child({ requestId: c.var.requestId }),
 		}),
 	);
+
+	app.on(["POST", "GET"], "/api/auth/*", (c) => {
+		const auth = createAuth(c.env)
+		return auth.handler(c.req.raw)
+	});
 
 	app.notFound(notFound);
 	app.onError(onError);
