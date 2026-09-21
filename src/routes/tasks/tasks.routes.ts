@@ -1,4 +1,4 @@
-import { createRoute, z } from "@hono/zod-openapi";
+import { z } from "@hono/zod-openapi";
 import * as HttpStatusCodes from "stoker/http-status-codes";
 import {
 	jsonContent,
@@ -6,6 +6,7 @@ import {
 	jsonContentRequired,
 } from "stoker/openapi/helpers";
 import { createErrorSchema, IdParamsSchema } from "stoker/openapi/schemas";
+import { protectedRoute } from "@/middlewares/auth.js";
 import {
 	insertTasksSchema,
 	selectTasksSchema,
@@ -15,7 +16,7 @@ import { notFoundSchema } from "../../lib/constants.js";
 
 const tags = ["Tasks"];
 
-export const list = createRoute({
+export const list = protectedRoute({
 	tags,
 	method: "get",
 	path: "/tasks",
@@ -27,7 +28,7 @@ export const list = createRoute({
 	},
 });
 
-export const create = createRoute({
+export const create = protectedRoute({
 	tags,
 	path: "/tasks",
 	method: "post",
@@ -43,7 +44,7 @@ export const create = createRoute({
 	},
 });
 
-export const getOne = createRoute({
+export const getOne = protectedRoute({
 	tags,
 	method: "get",
 	path: "/tasks/{id}",
@@ -60,7 +61,7 @@ export const getOne = createRoute({
 	},
 });
 
-export const update = createRoute({
+export const update = protectedRoute({
 	tags,
 	method: "put",
 	path: "/tasks/{id}",
@@ -78,7 +79,7 @@ export const update = createRoute({
 	},
 });
 
-export const remove = createRoute({
+export const remove = protectedRoute({
 	tags,
 	method: "delete",
 	path: "/tasks/{id}",
