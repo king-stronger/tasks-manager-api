@@ -10,8 +10,8 @@ import {
 	insertTasksSchema,
 	selectTasksSchema,
 	updateTasksSchema,
-} from "@/db/schema.js";
-import { notFoundSchema } from "@/lib/constants.js";
+} from "../../db/schemas/tasks.js";
+import { notFoundSchema } from "../../lib/constants.js";
 
 const tags = ["Tasks"];
 

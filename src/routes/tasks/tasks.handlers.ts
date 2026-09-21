@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
 import * as HttpStatusCodes from "stoker/http-status-codes";
 import * as HttpStatusPhrases from "stoker/http-status-phrases";
-import { createDb } from "@/db/index.js";
-import { tasks } from "@/db/schema.js";
-import type { AppRouteHandler } from "@/lib/types.js";
+import { createDb } from "../../db/index.js";
+import { tasks } from "../../db/schemas/tasks.js";
+import type { AppRouteHandler } from "../../lib/types.js";
 import type {
 	CreateRoute,
 	GetOneRoute,
