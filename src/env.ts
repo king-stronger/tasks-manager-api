@@ -7,6 +7,8 @@ const envSchema = z.object({
 		.enum(["fatal", "error", "warn", "info", "debug", "trace"])
 		.default("info"),
 	DATABASE_URL: z.url(),
+	BETTER_AUTH_SECRET: z.string().min(1),
+	BETTER_AUTH_URL: z.url()
 });
 
 export type Environment = z.infer<typeof envSchema>;
