@@ -32,6 +32,8 @@ const selectTaskWithLabelsSchema = selectTasksSchema.extend({
 			}),
 		)
 		.optional(),
+	checklistTotal: z.number().int().nonnegative().optional(),
+	checklistDone: z.number().int().nonnegative().optional(),
 });
 
 const listQuerySchema = paginationQuerySchema.extend({

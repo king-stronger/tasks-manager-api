@@ -5,6 +5,7 @@ import {
 	desc,
 	eq,
 	ilike,
+	inArray,
 	isNotNull,
 	isNull,
 	or,
@@ -13,6 +14,7 @@ import {
 import * as HttpStatusCodes from "stoker/http-status-codes";
 import * as HttpStatusPhrases from "stoker/http-status-phrases";
 import { createDb } from "@/db/index.js";
+import { checklistItems } from "@/db/schemas/checklist-items.js";
 import { taskLabels, tasks } from "@/db/schemas/tasks.js";
 import { getAuthenticatedUser } from "@/lib/get-user.js";
 import { createNotification } from "@/lib/notifications.js";
@@ -190,9 +192,38 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 		db.select({ value: count() }).from(tasks).where(whereClause),
 	]);
 
+	const taskIds = rows.map((row) => row.id);
+	const checklistStats =
+		taskIds.length === 0
+			? []
+			: await db
+					.select({
+						taskId: checklistItems.taskId,
+						total: count(),
+						done: sql<number>`coalesce(sum(case when ${checklistItems.done} then 1 else 0 end), 0)`.mapWith(
+							Number,
+						),
+					})
+					.from(checklistItems)
+					.where(inArray(checklistItems.taskId, taskIds))
+					.groupBy(checklistItems.taskId);
+
+	const statsByTaskId = new Map(
+		checklistStats.map((row) => [
+			row.taskId,
+			{ checklistTotal: row.total, checklistDone: row.done },
+		]),
+	);
+
 	return c.json(
 		buildPaginatedResponse(
-			rows.map(mapTaskWithLabels),
+			rows.map((row) => ({
+				...mapTaskWithLabels(row),
+				...(statsByTaskId.get(row.id) ?? {
+					checklistTotal: 0,
+					checklistDone: 0,
+				}),
+			})),
 			totalRow[0]?.value ?? 0,
 			resolvedPage,
 			resolvedLimit,
