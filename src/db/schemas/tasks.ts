@@ -26,11 +26,21 @@ export const taskPriorityEnum = pgEnum("task_priority", [
 	"high",
 ]);
 
+export const taskRecurrenceEnum = pgEnum("task_recurrence", [
+	"none",
+	"daily",
+	"weekly",
+	"monthly",
+]);
+
 export const tasks = pgTable("tasks", {
 	id: serial("id").primaryKey(),
 	userId: text("user_id")
 		.notNull()
 		.references(() => user.id, { onDelete: "cascade" }),
+	assigneeId: text("assignee_id").references(() => user.id, {
+		onDelete: "set null",
+	}),
 	projectId: integer("project_id").references(() => projects.id, {
 		onDelete: "set null",
 	}),
@@ -40,6 +50,9 @@ export const tasks = pgTable("tasks", {
 	priority: taskPriorityEnum("priority").notNull().default("medium"),
 	dueDate: timestamp("due_date", { withTimezone: true }),
 	position: integer("position").notNull().default(0),
+	recurrence: taskRecurrenceEnum("recurrence").notNull().default("none"),
+	recurrenceInterval: integer("recurrence_interval").notNull().default(1),
+	recurrenceEndDate: timestamp("recurrence_end_date", { withTimezone: true }),
 	archivedAt: timestamp("archived_at", { withTimezone: true }),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
@@ -67,6 +80,12 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
 	user: one(user, {
 		fields: [tasks.userId],
 		references: [user.id],
+		relationName: "task_owner",
+	}),
+	assignee: one(user, {
+		fields: [tasks.assigneeId],
+		references: [user.id],
+		relationName: "task_assignee",
 	}),
 	project: one(projects, {
 		fields: [tasks.projectId],
@@ -88,6 +107,12 @@ export const taskLabelsRelations = relations(taskLabels, ({ one }) => ({
 
 export const taskStatusSchema = z.enum(["todo", "in_progress", "done"]);
 export const taskPrioritySchema = z.enum(["low", "medium", "high"]);
+export const taskRecurrenceSchema = z.enum([
+	"none",
+	"daily",
+	"weekly",
+	"monthly",
+]);
 
 export const selectTasksSchema = createSelectSchema(tasks);
 
@@ -99,6 +124,10 @@ export const insertTasksSchema = createInsertSchema(tasks, {
 	dueDate: z.coerce.date().optional().nullable(),
 	position: z.number().int().min(0).optional(),
 	projectId: z.number().int().positive().optional().nullable(),
+	assigneeId: z.string().min(1).optional().nullable(),
+	recurrence: taskRecurrenceSchema.optional(),
+	recurrenceInterval: z.number().int().min(1).max(365).optional(),
+	recurrenceEndDate: z.coerce.date().optional().nullable(),
 })
 	.omit({
 		id: true,
