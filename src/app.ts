@@ -7,6 +7,7 @@ import labels from "@/routes/labels/labels.index.js";
 import notifications from "@/routes/notifications/notifications.index.js";
 import projects from "@/routes/projects/projects.index.js";
 import tasks from "@/routes/tasks/tasks.index.js";
+import users from "@/routes/users/users.index.js";
 import { handleScheduled } from "@/scheduled.js";
 
 const app = createApp();
@@ -19,6 +20,7 @@ const routes = [
 	checklist,
 	comments,
 	notifications,
+	users,
 ];
 
 configureOpenApi(app);
