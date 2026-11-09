@@ -6,8 +6,8 @@ export function configureOpenApi(app: AppOpenApi) {
 	app.openAPIRegistry.registerComponent("securitySchemes", "CookieAuth", {
 		type: "apiKey",
 		in: "cookie",
-		name: "better-auth.session_token"
-	})
+		name: "better-auth.session_token",
+	});
 
 	app.doc("/docs", {
 		openapi: "3.1.0",
@@ -22,7 +22,7 @@ export function configureOpenApi(app: AppOpenApi) {
 		Scalar({
 			sources: [
 				{ url: "/docs", title: "API" },
-				{ url: "/api/auth/open-api/generate-schema", title: "AUTH" }
+				{ url: "/api/auth/open-api/generate-schema", title: "AUTH" },
 			],
 			theme: "kepler",
 			layout: "modern",

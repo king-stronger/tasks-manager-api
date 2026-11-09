@@ -1,3 +1,7 @@
+/**
+ * Optional Node.js entry for local debugging outside Wrangler.
+ * Canonical runtime is Cloudflare Workers via `wrangler` (`src/app.ts`).
+ */
 import { serve } from "@hono/node-server";
 
 import app from "./app.js";
@@ -12,5 +16,3 @@ serve(
 		console.log(`Server is running on http://localhost:${info.port}`);
 	},
 );
-
-//Test for cloudflare

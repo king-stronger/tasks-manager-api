@@ -8,10 +8,10 @@ import { createAuth } from "../lib/auth.js";
 import type { AppBindings } from "../lib/types.js";
 
 export const authMiddleware = async (c: Context<AppBindings>, next: Next) => {
-	const auth = createAuth(c.env)
+	const auth = createAuth(c.env);
 	const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
-	if (!session){
+	if (!session) {
 		c.set("user", null);
 		c.set("session", null);
 		await next();
@@ -39,7 +39,7 @@ export const requireAuth = async (c: Context<AppBindings>, next: Next) => {
 };
 
 export const protectedRoute = <
-	R extends Omit<RouteConfig, "middleware" | "security">
+	R extends Omit<RouteConfig, "middleware" | "security">,
 >(
 	options: R,
 ) =>
@@ -55,10 +55,8 @@ export const protectedRoute = <
 		},
 	});
 
-export const optionalRoute = <
-	R extends Omit<RouteConfig, "middleware">
->(
-	options: R
+export const optionalRoute = <R extends Omit<RouteConfig, "middleware">>(
+	options: R,
 ) =>
 	createRoute({
 		...options,

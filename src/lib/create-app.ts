@@ -31,8 +31,8 @@ export default function createApp() {
 	);
 
 	app.on(["POST", "GET"], "/api/auth/*", (c) => {
-		const auth = createAuth(c.env)
-		return auth.handler(c.req.raw)
+		const auth = createAuth(c.env);
+		return auth.handler(c.req.raw);
 	});
 
 	app.notFound(notFound);
