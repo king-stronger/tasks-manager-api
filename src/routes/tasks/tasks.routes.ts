@@ -6,24 +6,70 @@ import {
 	jsonContentRequired,
 } from "stoker/openapi/helpers";
 import { createErrorSchema, IdParamsSchema } from "stoker/openapi/schemas";
-import { protectedRoute } from "@/middlewares/auth.js";
 import {
 	insertTasksSchema,
 	selectTasksSchema,
+	taskPrioritySchema,
+	taskStatusSchema,
 	updateTasksSchema,
-} from "../../db/schemas/tasks.js";
-import { notFoundSchema } from "../../lib/constants.js";
+} from "@/db/schemas/tasks.js";
+import { notFoundSchema } from "@/lib/constants.js";
+import {
+	paginatedMetaSchema,
+	paginationQuerySchema,
+} from "@/lib/pagination.js";
+import { protectedRoute } from "@/middlewares/auth.js";
 
 const tags = ["Tasks"];
+
+const selectTaskWithLabelsSchema = selectTasksSchema.extend({
+	labels: z
+		.array(
+			z.object({
+				id: z.number().int(),
+				name: z.string(),
+				color: z.string().nullable(),
+			}),
+		)
+		.optional(),
+});
+
+const listQuerySchema = paginationQuerySchema.extend({
+	status: taskStatusSchema.optional(),
+	priority: taskPrioritySchema.optional(),
+	projectId: z.coerce.number().int().positive().optional(),
+	q: z.string().min(1).max(200).optional(),
+	sortBy: z
+		.enum(["createdAt", "updatedAt", "dueDate", "priority", "position", "name"])
+		.default("position")
+		.optional(),
+	sortOrder: z.enum(["asc", "desc"]).default("asc").optional(),
+	archived: z
+		.enum(["true", "false"])
+		.default("false")
+		.transform((value) => value === "true"),
+});
+
+const paginatedTasksSchema = z.object({
+	data: z.array(selectTaskWithLabelsSchema),
+	meta: paginatedMetaSchema,
+});
 
 export const list = protectedRoute({
 	tags,
 	method: "get",
 	path: "/tasks",
+	request: {
+		query: listQuerySchema,
+	},
 	responses: {
 		[HttpStatusCodes.OK]: jsonContent(
-			z.array(selectTasksSchema),
-			"The list of tasks",
+			paginatedTasksSchema,
+			"Paginated list of tasks",
+		),
+		[HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
+			createErrorSchema(listQuerySchema),
+			"The validation(s) error(s)",
 		),
 	},
 });
@@ -36,7 +82,14 @@ export const create = protectedRoute({
 		body: jsonContentRequired(insertTasksSchema, "The task to create"),
 	},
 	responses: {
-		[HttpStatusCodes.OK]: jsonContent(selectTasksSchema, "The created task"),
+		[HttpStatusCodes.CREATED]: jsonContent(
+			selectTaskWithLabelsSchema,
+			"The created task",
+		),
+		[HttpStatusCodes.NOT_FOUND]: jsonContent(
+			notFoundSchema,
+			"Project or label not found",
+		),
 		[HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
 			createErrorSchema(insertTasksSchema),
 			"The validation(s) error(s)",
@@ -52,7 +105,10 @@ export const getOne = protectedRoute({
 		params: IdParamsSchema,
 	},
 	responses: {
-		[HttpStatusCodes.OK]: jsonContent(selectTasksSchema, "The requested task"),
+		[HttpStatusCodes.OK]: jsonContent(
+			selectTaskWithLabelsSchema,
+			"The requested task",
+		),
 		[HttpStatusCodes.NOT_FOUND]: jsonContent(notFoundSchema, "Task not found"),
 		[HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
 			createErrorSchema(IdParamsSchema),
@@ -63,15 +119,21 @@ export const getOne = protectedRoute({
 
 export const update = protectedRoute({
 	tags,
-	method: "put",
+	method: "patch",
 	path: "/tasks/{id}",
 	request: {
 		params: IdParamsSchema,
-		body: jsonContentRequired(updateTasksSchema, "The task to update"),
+		body: jsonContentRequired(updateTasksSchema, "The task fields to update"),
 	},
 	responses: {
-		[HttpStatusCodes.OK]: jsonContent(selectTasksSchema, "The updated task"),
-		[HttpStatusCodes.NOT_FOUND]: jsonContent(notFoundSchema, "Task not found"),
+		[HttpStatusCodes.OK]: jsonContent(
+			selectTaskWithLabelsSchema,
+			"The updated task",
+		),
+		[HttpStatusCodes.NOT_FOUND]: jsonContent(
+			notFoundSchema,
+			"Task, project or label not found",
+		),
 		[HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContentOneOf(
 			[createErrorSchema(updateTasksSchema), createErrorSchema(IdParamsSchema)],
 			"Invalid Id or Validation(s) error(s)",
@@ -85,10 +147,16 @@ export const remove = protectedRoute({
 	path: "/tasks/{id}",
 	request: {
 		params: IdParamsSchema,
+		query: z.object({
+			hard: z
+				.enum(["true", "false"])
+				.default("false")
+				.transform((value) => value === "true"),
+		}),
 	},
 	responses: {
 		[HttpStatusCodes.NO_CONTENT]: {
-			description: "The deleted task",
+			description: "The task was archived or deleted",
 		},
 		[HttpStatusCodes.NOT_FOUND]: jsonContent(notFoundSchema, "Task not found"),
 		[HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
