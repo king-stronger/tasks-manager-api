@@ -38,6 +38,8 @@ const listQuerySchema = paginationQuerySchema.extend({
 	status: taskStatusSchema.optional(),
 	priority: taskPrioritySchema.optional(),
 	projectId: z.coerce.number().int().positive().optional(),
+	assigneeId: z.string().min(1).optional(),
+	scope: z.enum(["all", "owned", "assigned"]).default("all").optional(),
 	q: z.string().min(1).max(200).optional(),
 	sortBy: z
 		.enum(["createdAt", "updatedAt", "dueDate", "priority", "position", "name"])

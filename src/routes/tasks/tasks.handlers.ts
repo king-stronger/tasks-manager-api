@@ -15,11 +15,17 @@ import * as HttpStatusPhrases from "stoker/http-status-phrases";
 import { createDb } from "@/db/index.js";
 import { taskLabels, tasks } from "@/db/schemas/tasks.js";
 import { getAuthenticatedUser } from "@/lib/get-user.js";
+import { createNotification } from "@/lib/notifications.js";
 import {
 	assertLabelsOwnedByUser,
 	assertProjectOwnedByUser,
 } from "@/lib/ownership.js";
 import { buildPaginatedResponse, getPagination } from "@/lib/pagination.js";
+import {
+	buildNextOccurrenceValues,
+	shouldSpawnNextOccurrence,
+} from "@/lib/recurrence.js";
+import { assertUserExists, taskVisibleToUser } from "@/lib/task-access.js";
 import type { AppRouteHandler } from "@/lib/types.js";
 import type {
 	CreateRoute,
@@ -74,6 +80,34 @@ async function syncTaskLabels(
 	);
 }
 
+async function maybeNotifyAssignee(
+	db: ReturnType<typeof createDb>["db"],
+	env: Env,
+	input: {
+		actorId: string;
+		actorName: string;
+		task: typeof tasks.$inferSelect;
+		previousAssigneeId?: string | null;
+	},
+) {
+	const assigneeId = input.task.assigneeId;
+	if (!assigneeId || assigneeId === input.actorId) {
+		return;
+	}
+	if (assigneeId === input.previousAssigneeId) {
+		return;
+	}
+
+	await createNotification(db, env, {
+		userId: assigneeId,
+		type: "task_assigned",
+		title: `Assigned: ${input.task.name}`,
+		body: `${input.actorName} assigned you to "${input.task.name}"`,
+		data: { taskId: input.task.id },
+		sendEmail: true,
+	});
+}
+
 export const list: AppRouteHandler<ListRoute> = async (c) => {
 	const user = getAuthenticatedUser(c);
 	const {
@@ -82,10 +116,12 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 		status,
 		priority,
 		projectId,
+		assigneeId,
 		q,
 		sortBy = "position",
 		sortOrder = "asc",
 		archived = false,
+		scope = "all",
 	} = c.req.valid("query");
 	const {
 		offset,
@@ -94,10 +130,19 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 	} = getPagination(page, limit);
 	const { db } = createDb(c.env);
 
+	const visibility =
+		scope === "owned"
+			? eq(tasks.userId, user.id)
+			: scope === "assigned"
+				? eq(tasks.assigneeId, user.id)
+				: taskVisibleToUser(user.id);
+
 	const filters = [
-		eq(tasks.userId, user.id),
 		archived ? isNotNull(tasks.archivedAt) : isNull(tasks.archivedAt),
 	];
+	if (visibility) {
+		filters.push(visibility);
+	}
 
 	if (status) {
 		filters.push(eq(tasks.status, status));
@@ -107,6 +152,9 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 	}
 	if (projectId) {
 		filters.push(eq(tasks.projectId, projectId));
+	}
+	if (assigneeId) {
+		filters.push(eq(tasks.assigneeId, assigneeId));
 	}
 	if (q) {
 		const pattern = `%${q}%`;
@@ -172,6 +220,16 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
 		}
 	}
 
+	if (payload.assigneeId) {
+		const exists = await assertUserExists(db, payload.assigneeId);
+		if (!exists) {
+			return c.json(
+				{ message: HttpStatusPhrases.NOT_FOUND },
+				HttpStatusCodes.NOT_FOUND,
+			);
+		}
+	}
+
 	if (labelIds?.length) {
 		const owned = await assertLabelsOwnedByUser(db, labelIds, user.id);
 		if (!owned) {
@@ -194,8 +252,15 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
 		await syncTaskLabels(db, inserted.id, labelIds);
 	}
 
+	await maybeNotifyAssignee(db, c.env, {
+		actorId: user.id,
+		actorName: user.name,
+		task: inserted,
+		previousAssigneeId: null,
+	});
+
 	const created = await db.query.tasks.findFirst({
-		where: and(eq(tasks.id, inserted.id), eq(tasks.userId, user.id)),
+		where: and(eq(tasks.id, inserted.id), taskVisibleToUser(user.id)),
 		with: taskWithLabels,
 	});
 
@@ -214,7 +279,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
 	const { id } = c.req.valid("param");
 	const { db } = createDb(c.env);
 	const task = await db.query.tasks.findFirst({
-		where: and(eq(tasks.id, id), eq(tasks.userId, user.id)),
+		where: and(eq(tasks.id, id), taskVisibleToUser(user.id)),
 		with: taskWithLabels,
 	});
 
@@ -235,8 +300,7 @@ export const update: AppRouteHandler<UpdateRoute> = async (c) => {
 	const { db } = createDb(c.env);
 
 	const existing = await db.query.tasks.findFirst({
-		where: and(eq(tasks.id, id), eq(tasks.userId, user.id)),
-		columns: { id: true },
+		where: and(eq(tasks.id, id), taskVisibleToUser(user.id)),
 	});
 
 	if (!existing) {
@@ -246,9 +310,32 @@ export const update: AppRouteHandler<UpdateRoute> = async (c) => {
 		);
 	}
 
+	const isOwner = existing.userId === user.id;
+	if (!isOwner) {
+		const allowedKeys = new Set(["status", "priority", "dueDate", "position"]);
+		const requestedKeys = Object.keys(data);
+		const forbidden = requestedKeys.some((key) => !allowedKeys.has(key));
+		if (forbidden || labelIds) {
+			return c.json(
+				{ message: HttpStatusPhrases.NOT_FOUND },
+				HttpStatusCodes.NOT_FOUND,
+			);
+		}
+	}
+
 	if (data.projectId != null) {
 		const owned = await assertProjectOwnedByUser(db, data.projectId, user.id);
 		if (!owned) {
+			return c.json(
+				{ message: HttpStatusPhrases.NOT_FOUND },
+				HttpStatusCodes.NOT_FOUND,
+			);
+		}
+	}
+
+	if (data.assigneeId) {
+		const exists = await assertUserExists(db, data.assigneeId);
+		if (!exists) {
 			return c.json(
 				{ message: HttpStatusPhrases.NOT_FOUND },
 				HttpStatusCodes.NOT_FOUND,
@@ -270,15 +357,50 @@ export const update: AppRouteHandler<UpdateRoute> = async (c) => {
 		await db
 			.update(tasks)
 			.set(data)
-			.where(and(eq(tasks.id, id), eq(tasks.userId, user.id)));
+			.where(and(eq(tasks.id, id), taskVisibleToUser(user.id)));
 	}
 
 	if (labelIds) {
 		await syncTaskLabels(db, id, labelIds);
 	}
 
-	const task = await db.query.tasks.findFirst({
-		where: and(eq(tasks.id, id), eq(tasks.userId, user.id)),
+	let task = await db.query.tasks.findFirst({
+		where: and(eq(tasks.id, id), taskVisibleToUser(user.id)),
+		with: taskWithLabels,
+	});
+
+	if (!task) {
+		return c.json(
+			{ message: HttpStatusPhrases.NOT_FOUND },
+			HttpStatusCodes.NOT_FOUND,
+		);
+	}
+
+	await maybeNotifyAssignee(db, c.env, {
+		actorId: user.id,
+		actorName: user.name,
+		task,
+		previousAssigneeId: existing.assigneeId,
+	});
+
+	if (
+		existing.status !== "done" &&
+		task.status === "done" &&
+		shouldSpawnNextOccurrence(task)
+	) {
+		const [spawned] = await db
+			.insert(tasks)
+			.values(buildNextOccurrenceValues(task))
+			.returning();
+
+		const existingLabelIds = task.taskLabels?.map((entry) => entry.label.id);
+		if (existingLabelIds?.length) {
+			await syncTaskLabels(db, spawned.id, existingLabelIds);
+		}
+	}
+
+	task = await db.query.tasks.findFirst({
+		where: and(eq(tasks.id, id), taskVisibleToUser(user.id)),
 		with: taskWithLabels,
 	});
 
