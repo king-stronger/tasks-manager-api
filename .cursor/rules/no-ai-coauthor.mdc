@@ -1,0 +1,11 @@
+---
+description: Never add AI co-author trailers to git commits
+alwaysApply: true
+---
+
+# No AI co-authors in commits
+
+- Never add `Co-authored-by: Cursor`, `Co-authored-by: Claude`, or any AI/agent co-author trailer to commit messages.
+- Never add Asssisted-by / Generated-by / Signed-off-by trailers that attribute work to an AI.
+- Commit author/committer must remain the user's git identity only.
+- If a tool or environment tries to inject such a trailer, strip it before committing.

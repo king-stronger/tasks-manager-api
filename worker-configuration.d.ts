@@ -6,6 +6,9 @@ interface __BaseEnv_Env {
 	DATABASE_URL: string;
 	BETTER_AUTH_SECRET: string;
 	BETTER_AUTH_URL: string;
+	RESEND_API_KEY?: string;
+	RESEND_FROM_EMAIL?: string;
+	APP_NAME?: string;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {

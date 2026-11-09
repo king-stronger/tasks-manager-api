@@ -9,6 +9,9 @@ const envSchema = z.object({
 	DATABASE_URL: z.url(),
 	BETTER_AUTH_SECRET: z.string().min(1),
 	BETTER_AUTH_URL: z.url(),
+	RESEND_API_KEY: z.string().min(1).optional(),
+	RESEND_FROM_EMAIL: z.email().optional(),
+	APP_NAME: z.string().default("Tasks Manager"),
 });
 
 export type Environment = z.infer<typeof envSchema>;
