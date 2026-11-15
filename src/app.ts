@@ -29,6 +29,9 @@ routes.forEach((route) => {
 	app.route("/", route);
 });
 
+/** Hono app for tests (`app.request`) and Node serve. */
+export { app };
+
 export default {
 	fetch: app.fetch,
 	async scheduled(

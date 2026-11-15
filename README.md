@@ -32,6 +32,15 @@ pnpm db:push      # push schema without migration files
 pnpm db:studio    # Drizzle Studio
 ```
 
+## Tests
+
+```bash
+pnpm test          # once
+pnpm test:watch    # watch mode
+```
+
+Vitest calls the Hono app via `app.request` (no Wrangler). Integration tests use a real Neon database: prefer `DATABASE_URL_TEST`, otherwise `DATABASE_URL` from `.env`. Apply migrations on that database first. Fixtures use `@tasks-manager.test` emails and `[test-tm]` names, cleaned in `afterEach`. Outbound email is skipped when `RESEND_API_KEY` is unset in the test env.
+
 ## Domains
 
 - **Tasks** — ownership/assignee, status/priority/dueDate, recurrence, pagination, filters, labels, soft archive

@@ -1,4 +1,3 @@
-import { env } from "cloudflare:workers";
 import { structuredLogger } from "@hono/structured-logger";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
@@ -8,10 +7,6 @@ import { notFound, onError, serveEmojiFavicon } from "stoker/middlewares";
 import { defaultHook } from "stoker/openapi";
 import { createAuth } from "./auth.js";
 import type { AppBindings } from "./types.js";
-
-const rootLogger = pino({
-	level: env.LOG_LEVEL || "info",
-});
 
 export function createRouter() {
 	return new OpenAPIHono<AppBindings>({
@@ -27,7 +22,10 @@ export default function createApp() {
 	app.use(requestId());
 	app.use(
 		structuredLogger({
-			createLogger: (c) => rootLogger.child({ requestId: c.var.requestId }),
+			createLogger: (c) =>
+				pino({ level: c.env.LOG_LEVEL || "info" }).child({
+					requestId: c.var.requestId,
+				}),
 		}),
 	);
 	app.use(
