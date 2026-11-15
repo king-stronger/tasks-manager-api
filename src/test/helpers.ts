@@ -3,6 +3,7 @@ import { app } from "@/app.js";
 import { createDb } from "@/db/index.js";
 import { user } from "@/db/schemas/auth.js";
 import { labels } from "@/db/schemas/labels.js";
+import { notifications } from "@/db/schemas/notifications.js";
 import { projects } from "@/db/schemas/projects.js";
 import { taskLabels, tasks } from "@/db/schemas/tasks.js";
 import { createAuth } from "@/lib/auth.js";
@@ -189,6 +190,32 @@ export async function seedTestTask(
 	}
 
 	return task;
+}
+
+export async function seedTestNotification(
+	recipient: TestUser,
+	input?: {
+		type?: "task_assigned" | "task_due_soon" | "comment_added";
+		title?: string;
+		body?: string;
+		data?: Record<string, unknown>;
+		readAt?: Date | null;
+	},
+) {
+	const db = testDb();
+	const suffix = crypto.randomUUID().slice(0, 8);
+	const [notification] = await db
+		.insert(notifications)
+		.values({
+			userId: recipient.id,
+			type: input?.type ?? "task_assigned",
+			title: input?.title ?? `${TEST_NAME_PREFIX}Notification ${suffix}`,
+			body: input?.body ?? "Fixture notification body",
+			data: input?.data ?? {},
+			readAt: input?.readAt === undefined ? null : input.readAt,
+		})
+		.returning();
+	return notification;
 }
 
 /**
