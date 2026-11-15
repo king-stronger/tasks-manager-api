@@ -1,5 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
+import { notifications } from "@/db/schemas/notifications.js";
 import { tasks } from "@/db/schemas/tasks.js";
 import {
 	TEST_NAME_PREFIX,
@@ -174,5 +175,64 @@ describe("tasks", () => {
 		expect(next?.status).toBe("todo");
 		expect(next?.dueDate?.toISOString()).toBe("2026-03-08T00:00:00.000Z");
 		expect(next?.recurrence).toBe("weekly");
+	});
+
+	it("filters by owned/assigned scope and notifies on assignment", async () => {
+		const owner = await createTestUser();
+		const assignee = await createTestUser();
+		fixtures.userIds.push(owner.id, assignee.id);
+
+		const ownedOnly = await seedTestTask(owner, {
+			name: `${TEST_NAME_PREFIX}Owned only`,
+		});
+		const assignedToMe = await seedTestTask(owner, {
+			name: `${TEST_NAME_PREFIX}Assigned to me`,
+			assigneeId: assignee.id,
+		});
+
+		const ownedScope = await api("/tasks?scope=owned", {
+			headers: { cookie: owner.cookie },
+		});
+		expect(ownedScope.status).toBe(200);
+		const ownedBody = (await ownedScope.json()) as {
+			data: Array<{ id: number }>;
+		};
+		expect(ownedBody.data.some((row) => row.id === ownedOnly.id)).toBe(true);
+		expect(ownedBody.data.some((row) => row.id === assignedToMe.id)).toBe(true);
+
+		const assignedScope = await api("/tasks?scope=assigned", {
+			headers: { cookie: assignee.cookie },
+		});
+		expect(assignedScope.status).toBe(200);
+		const assignedBody = (await assignedScope.json()) as {
+			data: Array<{ id: number }>;
+		};
+		expect(assignedBody.data.some((row) => row.id === assignedToMe.id)).toBe(
+			true,
+		);
+		expect(assignedBody.data.some((row) => row.id === ownedOnly.id)).toBe(false);
+
+		const created = await api("/tasks", {
+			method: "POST",
+			headers: { cookie: owner.cookie },
+			body: JSON.stringify({
+				name: `${TEST_NAME_PREFIX}Fresh assign`,
+				assigneeId: assignee.id,
+			}),
+		});
+		expect(created.status).toBe(201);
+		const createdBody = (await created.json()) as { id: number };
+
+		const db = testDb();
+		const notify = await db.query.notifications.findFirst({
+			where: and(
+				eq(notifications.userId, assignee.id),
+				eq(notifications.type, "task_assigned"),
+			),
+		});
+		expect(notify?.title).toContain("Fresh assign");
+		expect(
+			(notify?.data as { taskId?: number } | null)?.taskId,
+		).toBe(createdBody.id);
 	});
 });
