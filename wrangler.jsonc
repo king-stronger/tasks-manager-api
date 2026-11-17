@@ -6,5 +6,8 @@
 	"compatibility_flags": ["nodejs_compat"],
 	"triggers": {
 		"crons": ["0 * * * *"]
+	},
+	"vars": {
+		"FRONTEND_URL": "https://tasks-manager-app.strongerprojects.workers.dev"
 	}
 }
