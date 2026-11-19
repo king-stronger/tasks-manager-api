@@ -5,6 +5,7 @@ import { requestId } from "hono/request-id";
 import pino from "pino";
 import { notFound, onError, serveEmojiFavicon } from "stoker/middlewares";
 import { defaultHook } from "stoker/openapi";
+import { cacheControl } from "../middlewares/cache-control.js";
 import { createAuth } from "./auth.js";
 import type { AppBindings } from "./types.js";
 
@@ -20,6 +21,7 @@ export default function createApp() {
 
 	app.use(serveEmojiFavicon(""));
 	app.use(requestId());
+	app.use(cacheControl);
 	app.use(
 		structuredLogger({
 			createLogger: (c) =>
@@ -43,7 +45,7 @@ export default function createApp() {
 				if (!origin) {
 					return allowed[0] ?? "*";
 				}
-				return allowed.includes(origin) ? origin : allowed[0] ?? "";
+				return allowed.includes(origin) ? origin : (allowed[0] ?? "");
 			},
 			credentials: true,
 			allowHeaders: ["Content-Type", "Authorization"],
