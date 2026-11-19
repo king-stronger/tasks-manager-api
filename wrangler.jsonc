@@ -8,6 +8,7 @@
 		"crons": ["0 * * * *"]
 	},
 	"vars": {
+		"BETTER_AUTH_URL": "https://tasks-manager-app.strongerprojects.workers.dev",
 		"FRONTEND_URL": "https://tasks-manager-app.strongerprojects.workers.dev"
 	}
 }
